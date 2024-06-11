@@ -41,12 +41,12 @@ pub fn options_from_args(args: &Args) -> RzSettings {
         None
     };
 
-    let unix_permissions = args.unix_permissions;
     let compression_level = args.compression_level;
+    let unix_permissions = args.unix_permissions;
 
     RzSettings {
+        compression_level,
         method,
         unix_permissions,
-        compression_level,
     }
 }

@@ -37,11 +37,15 @@ This means that Rzip supports the following extensions:
 
 ### Options
 
-| Option | Alias | Type | Description | Required |
-| ------ | ----- | ---- | ----------- | -------- |
-| `--level` | `-l` | Integer(64) | Compression level | No |
-| `--method` | `-m` | Enum | Compression method (stored/deflate/etc...) | No |
-| `--unix_permissions` | `-u` | UInteger(32) | Unix permissions for new files | No |
+| Option | Alias | Type | Description | Required | On command |
+| ------ | ----- | ---- | ----------- | -------- | ---------- |
+| `--level` | `-l` | Integer(64) | Compression level | No | `*` |
+| `--method` | `-m` | Enum | Compression method (stored/deflate/etc...) | No | `*` |
+| `--pick` | `-p` | String | File to extract from archive | No | `extract` |
+| `--unix_permissions` | `-u` | UInteger(32) | Unix permissions for new files | No | `*` |
+
+> Note that the `*` symbol indicates that the option is available for all commands.
+> Global options must be used before the command.
 
 ## Contributing
 
@@ -61,6 +65,6 @@ This project is licensed under the MIT License. See the [LICENSE](LICENSE) file 
 
 - [Rust](https://rust-lang.org/)
 - [Clap-rs](https://github.com/clap-rs/clap)
-- [Zip-rs](hhttps://github.com/zip-rs/zip2)
+- [Zip-rs](https://github.com/zip-rs/zip2)
 
 Developed with ❤️ by [Sammwy](https://github.com/sammwyy).

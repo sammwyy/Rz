@@ -14,6 +14,9 @@ pub enum RzError {
     #[error("File not found: {0}")]
     FileNotFound(String),
 
+    #[error("Entry not found: {0}")]
+    EntryNotFound(String),
+
     #[error("Bad name: {0}")]
     BadName(String),
 

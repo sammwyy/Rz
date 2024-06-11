@@ -55,6 +55,9 @@ enum Command {
 
         #[clap(name = "dest", help = "(Path) Destination file or directory")]
         dest: PathBuf,
+
+        #[arg(short = 'p', long = "pick", help = "Pick files to extract")]
+        pick: Option<Vec<String>>,
     },
 }
 
@@ -75,14 +78,14 @@ pub struct Args {
     command: Command,
 
     // Options.
+    #[arg(short = 'l', long = "level", help = "Compression level to use")]
+    compression_level: Option<i64>,
+
     #[arg(short = 'm', long = "method", help = "Compression method to use")]
     method: Option<ClapCompressionMethod>,
 
     #[arg(short = 'u', long = "unix", help = "Set unix permissions (i.e 755)")]
     unix_permissions: Option<u32>,
-
-    #[arg(short = 'l', long = "level", help = "Compression level to use")]
-    compression_level: Option<i64>,
 }
 
 // Commands implementation.
@@ -94,8 +97,13 @@ fn compress(src: Vec<PathBuf>, dest: PathBuf, settings: RzSettings) -> Result<()
     rzip_core::compression::compress(src, dest, settings)
 }
 
-fn extract(src: PathBuf, dest: PathBuf, settings: RzSettings) -> Result<(), RzError> {
-    rzip_core::extraction::extract(src, dest, settings)
+fn extract(
+    src: PathBuf,
+    dest: PathBuf,
+    pick: Option<Vec<String>>,
+    settings: RzSettings,
+) -> Result<(), RzError> {
+    rzip_core::extraction::extract(src, dest, pick, settings)
 }
 
 /**
@@ -108,7 +116,7 @@ fn main() {
     let err = match args.command {
         Command::Append { src, dest } => append(src, dest, opts),
         Command::Compress { src, dest } => compress(src, dest, opts),
-        Command::Extract { src, dest } => extract(src, dest, opts),
+        Command::Extract { src, dest, pick } => extract(src, dest, pick, opts),
     };
 
     if let Err(e) = err {
