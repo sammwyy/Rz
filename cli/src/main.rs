@@ -1,12 +1,13 @@
 use std::path::PathBuf;
 
 use clap::{Parser, Subcommand};
-use clap_utils::options_from_write_ops;
 use ops::{ReadOpFlags, ReadOpTarget, WriteOpFlags, WriteOpTarget};
 use rzip_core::RzError;
+use utils::options_from_write_ops;
 
-mod clap_utils;
+mod handler;
 mod ops;
+mod utils;
 
 const VERSION: &str = env!("CARGO_PKG_VERSION");
 
@@ -73,18 +74,18 @@ pub struct CLI {
 }
 
 // Commands implementation.
-fn append(src: Vec<PathBuf>, dest: PathBuf, flags: WriteOpFlags) -> Result<(), RzError> {
+fn cmd_append(src: Vec<PathBuf>, dest: PathBuf, flags: WriteOpFlags) -> Result<(), RzError> {
     let settings = options_from_write_ops(flags);
-    rzip_core::append::append(src, dest, settings)
+    handler::append(src, dest, settings)
 }
 
 fn compress(src: Vec<PathBuf>, dest: PathBuf, flags: WriteOpFlags) -> Result<(), RzError> {
     let settings = options_from_write_ops(flags);
-    rzip_core::compression::compress(src, dest, settings)
+    rzip_core::utils::compress_to_file(src, dest, settings)
 }
 
 fn extract(src: PathBuf, dest: PathBuf, pick: Option<Vec<String>>) -> Result<(), RzError> {
-    rzip_core::extraction::extract(src, dest, pick)
+    handler::extract(src, dest, pick)
 }
 
 /**
@@ -94,7 +95,7 @@ fn main() {
     let args = CLI::parse();
 
     let err = match args.command {
-        Command::Append { flags, target } => append(target.src, target.dest, flags),
+        Command::Append { flags, target } => cmd_append(target.src, target.dest, flags),
         Command::Compress { flags, target } => compress(target.src, target.dest, flags),
         Command::Extract {
             flags,

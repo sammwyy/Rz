@@ -2,7 +2,7 @@ use std::path::PathBuf;
 
 use clap::Args;
 
-use crate::clap_utils::ClapCompressionMethod;
+use crate::utils::ClapCompressionMethod;
 
 #[derive(Debug, Args)]
 pub struct WriteOpTarget {

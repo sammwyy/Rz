@@ -1,38 +1,20 @@
-use std::path::{Path, PathBuf};
+use std::{
+    fs::File,
+    io::{Read, Write},
+    path::{Path, PathBuf},
+};
 
 use anyhow::Context;
-use walkdir::{DirEntry, WalkDir};
+use zip::ZipWriter;
 
-use crate::{CompressionMethod, RzError, RzSettings};
-
-/**
- * Get the zip compression method from the Rzip compression method.
- */
-pub fn get_zip_method(method: CompressionMethod) -> zip::CompressionMethod {
-    match method {
-        CompressionMethod::Stored => zip::CompressionMethod::Stored,
-        CompressionMethod::Deflated => zip::CompressionMethod::Deflated,
-        CompressionMethod::DeflatedZlib => zip::CompressionMethod::Deflated,
-        CompressionMethod::DeflatedZlibNg => zip::CompressionMethod::Deflated,
-        CompressionMethod::Bzip2 => zip::CompressionMethod::Bzip2,
-        CompressionMethod::Zstd => zip::CompressionMethod::Zstd,
-    }
-}
+use crate::{
+    internals::{dir_iter, settings_to_file_options},
+    RzError, RzSettings,
+};
 
 /**
- * Create a directory iterator.
+ * Represents a file entry in the OS.
  */
-pub fn dir_iter(dir: &PathBuf) -> Result<impl Iterator<Item = DirEntry>, RzError> {
-    if !Path::new(dir).exists() {
-        return Err(RzError::FileNotFound(dir.to_str().unwrap().to_string()));
-    }
-
-    let walkdir = WalkDir::new(dir);
-    let walk_it = walkdir.into_iter();
-    let it = walk_it.filter_map(|e| e.ok());
-    Ok(it)
-}
-
 #[derive(Clone, Debug)]
 pub struct OsFileEntry {
     pub file_path: PathBuf,
@@ -40,6 +22,9 @@ pub struct OsFileEntry {
     pub is_dir: bool,
 }
 
+/**
+* Normalize an entry name.
+*/
 pub fn normalize_entry_name(name: &str) -> String {
     // Replace all backslashes with forward slashes.
     let dash_fix = name.replace("\\", "/");
@@ -107,19 +92,41 @@ pub fn resolve_relative(relative: PathBuf) -> PathBuf {
 }
 
 /**
- * Convert the Rzip settings to zip file options.
- */
-pub fn settings_to_file_options(settings: &RzSettings) -> zip::write::FileOptions<'static, ()> {
-    let mut options =
-        zip::write::FileOptions::default().compression_level(settings.compression_level);
+* Compress files to a zip file.
+*/
+pub fn compress_to_file(
+    src: Vec<PathBuf>,
+    dest: PathBuf,
+    settings: RzSettings,
+) -> Result<(), RzError> {
+    // Convert the settings to file options.
+    let options = settings_to_file_options(&settings);
+    // Gather the files to compress.
+    let files = gather_files(src)?;
 
-    if let Some(method) = settings.method {
-        options = options.compression_method(get_zip_method(method));
+    let dest = resolve_relative(dest);
+    let dest_path = Path::new(&dest);
+    let dest_file = File::create(dest_path).unwrap();
+
+    // Create the zip file.
+    let mut zip = ZipWriter::new(dest_file);
+    let mut buffer = Vec::new();
+
+    // Compress the files to the zip file.
+    for entry in files {
+        if entry.is_dir {
+            zip.add_directory(entry.zip_path, options)?;
+            continue;
+        }
+
+        zip.start_file(entry.zip_path, options)?;
+
+        let mut f = File::open(entry.file_path)?;
+        f.read_to_end(&mut buffer)?;
+        zip.write_all(&buffer)?;
+        buffer.clear();
     }
 
-    if let Some(permissions) = settings.unix_permissions {
-        options = options.unix_permissions(permissions);
-    }
-
-    options
+    zip.finish()?;
+    Ok(())
 }
