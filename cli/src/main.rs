@@ -54,6 +54,18 @@ enum Command {
         #[clap(name = "dest", help = "(Path) Destination directory", required = true)]
         dest: PathBuf,
     },
+
+    /**
+     * List entries in a zip file.
+     */
+    #[clap(alias = "ls", about = "List entries in a zip file")]
+    List {
+        #[clap(flatten)]
+        flags: ReadOpFlags,
+
+        #[clap(flatten)]
+        target: ReadOpTarget,
+    },
 }
 
 /**
@@ -79,13 +91,17 @@ fn cmd_append(src: Vec<PathBuf>, dest: PathBuf, flags: WriteOpFlags) -> Result<(
     handler::append(src, dest, settings)
 }
 
-fn compress(src: Vec<PathBuf>, dest: PathBuf, flags: WriteOpFlags) -> Result<(), RzError> {
+fn cmd_compress(src: Vec<PathBuf>, dest: PathBuf, flags: WriteOpFlags) -> Result<(), RzError> {
     let settings = options_from_write_ops(flags);
     rzip_core::utils::compress_to_file(src, dest, settings)
 }
 
-fn extract(src: PathBuf, dest: PathBuf, pick: Option<Vec<String>>) -> Result<(), RzError> {
+fn cmd_extract(src: PathBuf, dest: PathBuf, pick: Option<Vec<String>>) -> Result<(), RzError> {
     handler::extract(src, dest, pick)
+}
+
+fn cmd_list(src: PathBuf, flags: ReadOpFlags) -> Result<(), RzError> {
+    handler::list(src, flags.pick)
 }
 
 /**
@@ -96,12 +112,13 @@ fn main() {
 
     let err = match args.command {
         Command::Append { flags, target } => cmd_append(target.src, target.dest, flags),
-        Command::Compress { flags, target } => compress(target.src, target.dest, flags),
+        Command::Compress { flags, target } => cmd_compress(target.src, target.dest, flags),
         Command::Extract {
             flags,
             target,
             dest,
-        } => extract(target.src, dest, flags.pick),
+        } => cmd_extract(target.src, dest, flags.pick),
+        Command::List { flags, target } => cmd_list(target.src, flags),
     };
 
     if let Err(e) = err {

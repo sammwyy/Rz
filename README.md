@@ -34,6 +34,7 @@ This means that Rzip supports the following extensions:
 | `append` | Appends a file to an existing archive | `<sources...> <dest.zip>` | `a` |
 | `compress` | Compresses a file or directory |`<sources...> <dest.zip>` | `c` |
 | `extract` | Decompresses a file | `<source.zip> <dest>` | `x` |
+| `list` | Lists the contents of an archive | `<source.zip>` | `ls` |
 
 ### Options
 
@@ -41,7 +42,7 @@ This means that Rzip supports the following extensions:
 | ------ | ----- | ---- | ----------- | -------- | ---------- |
 | `--level` | `-l` | Integer(64) | Compression level | No | `append`, `compress` |
 | `--method` | `-m` | Enum | Compression method (stored/deflate/etc...) | No | `append`, `compress` |
-| `--pick` | `-p` | String | File to extract from archive | No | `extract` |
+| `--pick` | `-p` | String | File to extract from archive | No | `extract`, `list` |
 | `--unix_permissions` | `-u` | UInteger(32) | Unix permissions for new files | No | `compress` |
 
 ## Contributing

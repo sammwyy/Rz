@@ -38,3 +38,29 @@ pub fn extract(src: PathBuf, dest: PathBuf, pick: Option<Vec<String>>) -> Result
 
     Ok(())
 }
+
+pub fn list(src: PathBuf, pick: Option<Vec<String>>) -> Result<(), RzError> {
+    // Resolve the paths.
+    let src = resolve_relative(src);
+
+    // Check if the source file exists.
+    if !Path::new(&src).exists() {
+        return Err(RzError::FileNotFound(src.to_str().unwrap().to_string()));
+    }
+
+    // Create rz client.
+    let mut rz = Rz::new(src);
+    rz.open(false)?;
+
+    // Check for cherry-picking argument.
+    let entries = match pick {
+        Some(pick) => rz.list(pick[0].clone())?,
+        None => rz.list("".to_string())?,
+    };
+
+    for entry in entries {
+        println!("{}", entry.path);
+    }
+
+    Ok(())
+}

@@ -66,6 +66,14 @@ pub struct RzSettings {
 }
 
 /**
+ * Rzip entry.
+ */
+pub struct RzEntry {
+    pub path: String,
+    pub is_dir: bool,
+}
+
+/**
  * Rzip main struct.
  *
  * This struct is used to interact with the zip file.
@@ -178,6 +186,26 @@ impl Rz {
         }
 
         Ok(())
+    }
+
+    pub fn list(&mut self, path: String) -> Result<Vec<RzEntry>, RzError> {
+        self.ensure_ready()?;
+
+        let zip = self.zip.as_mut().unwrap();
+        let mut entries = Vec::new();
+
+        for i in 0..zip.len() {
+            let file = zip.by_index(i)?;
+            let file_path = file.name();
+            if file_path.starts_with(path.as_str()) {
+                entries.push(RzEntry {
+                    path: file_path.to_string(),
+                    is_dir: file.is_dir(),
+                });
+            }
+        }
+
+        Ok(entries)
     }
 
     /**
