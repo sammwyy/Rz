@@ -5,9 +5,9 @@ use std::{
 
 use zip::{read::ZipFile, ZipArchive};
 
-use crate::{utils::resolve_relative, RzError, RzSettings};
+use crate::{utils::resolve_relative, RzError};
 
-fn extract_file(file: &mut ZipFile, dest: &PathBuf, _settings: &RzSettings) -> Result<(), RzError> {
+fn extract_file(file: &mut ZipFile, dest: &PathBuf) -> Result<(), RzError> {
     let outpath = match file.enclosed_name() {
         Some(path) => dest.join(path),
         None => return Ok(()),
@@ -26,24 +26,6 @@ fn extract_file(file: &mut ZipFile, dest: &PathBuf, _settings: &RzSettings) -> R
         std::io::copy(file, &mut outfile)?;
     }
 
-    // Set the file permissions.
-    #[cfg(unix)]
-    {
-        use std::os::unix::fs::PermissionsExt;
-
-        if _settings.unix_permissions.is_some() {
-            fs::set_permissions(
-                &outpath,
-                fs::Permissions::from_mode(_settings.unix_permissions.unwrap()),
-            )
-            .unwrap();
-        } else {
-            if let Some(mode) = file.unix_mode() {
-                fs::set_permissions(&outpath, fs::Permissions::from_mode(mode)).unwrap();
-            }
-        }
-    }
-
     Ok(())
 }
 
@@ -51,7 +33,6 @@ fn extract_with_picking(
     mut zip: ZipArchive<File>,
     dest: &PathBuf,
     pick: Vec<String>,
-    settings: &RzSettings,
 ) -> Result<(), RzError> {
     for filename in pick {
         let mut file = match zip.by_name(filename.as_str()) {
@@ -61,31 +42,22 @@ fn extract_with_picking(
             }
         };
 
-        extract_file(&mut file, dest, settings)?;
+        extract_file(&mut file, dest)?;
     }
 
     Ok(())
 }
 
-fn extract_all(
-    mut zip: ZipArchive<File>,
-    dest: &PathBuf,
-    settings: &RzSettings,
-) -> Result<(), RzError> {
+fn extract_all(mut zip: ZipArchive<File>, dest: &PathBuf) -> Result<(), RzError> {
     for i in 0..zip.len() {
         let mut file = zip.by_index(i)?;
-        extract_file(&mut file, dest, settings)?;
+        extract_file(&mut file, dest)?;
     }
 
     Ok(())
 }
 
-pub fn extract(
-    src: PathBuf,
-    dest: PathBuf,
-    pick: Option<Vec<String>>,
-    settings: RzSettings,
-) -> Result<(), RzError> {
+pub fn extract(src: PathBuf, dest: PathBuf, pick: Option<Vec<String>>) -> Result<(), RzError> {
     // Resolve the paths.
     let src = resolve_relative(src);
     let dest = resolve_relative(dest);
@@ -101,9 +73,9 @@ pub fn extract(
 
     // Check for cherry-picking argument.
     if pick.is_some() {
-        extract_with_picking(zip, &dest, pick.unwrap(), &settings)?;
+        extract_with_picking(zip, &dest, pick.unwrap())?;
     } else {
-        extract_all(zip, &dest, &settings)?;
+        extract_all(zip, &dest)?;
     }
 
     Ok(())

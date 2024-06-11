@@ -39,13 +39,10 @@ This means that Rzip supports the following extensions:
 
 | Option | Alias | Type | Description | Required | On command |
 | ------ | ----- | ---- | ----------- | -------- | ---------- |
-| `--level` | `-l` | Integer(64) | Compression level | No | `*` |
-| `--method` | `-m` | Enum | Compression method (stored/deflate/etc...) | No | `*` |
+| `--level` | `-l` | Integer(64) | Compression level | No | `append`, `compress` |
+| `--method` | `-m` | Enum | Compression method (stored/deflate/etc...) | No | `append`, `compress` |
 | `--pick` | `-p` | String | File to extract from archive | No | `extract` |
-| `--unix_permissions` | `-u` | UInteger(32) | Unix permissions for new files | No | `*` |
-
-> Note that the `*` symbol indicates that the option is available for all commands.
-> Global options must be used before the command.
+| `--unix_permissions` | `-u` | UInteger(32) | Unix permissions for new files | No | `compress` |
 
 ## Contributing
 

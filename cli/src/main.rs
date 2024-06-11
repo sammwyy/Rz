@@ -1,10 +1,12 @@
 use std::path::PathBuf;
 
 use clap::{Parser, Subcommand};
-use clap_utils::{options_from_args, ClapCompressionMethod};
-use rzip_core::{RzError, RzSettings};
+use clap_utils::options_from_write_ops;
+use ops::{ReadOpFlags, ReadOpTarget, WriteOpFlags, WriteOpTarget};
+use rzip_core::RzError;
 
-pub mod clap_utils;
+mod clap_utils;
+mod ops;
 
 const VERSION: &str = env!("CARGO_PKG_VERSION");
 
@@ -18,15 +20,11 @@ enum Command {
      */
     #[clap(alias = "a", about = "Append a file or directory to a zip file")]
     Append {
-        #[clap(
-            name = "sources",
-            help = "(Paths) Source files or directories",
-            required = true
-        )]
-        src: Vec<PathBuf>,
+        #[clap(flatten)]
+        flags: WriteOpFlags,
 
-        #[clap(name = "dest", help = "(Path) Destination file", required = true)]
-        dest: PathBuf,
+        #[clap(flatten)]
+        target: WriteOpTarget,
     },
 
     /**
@@ -34,15 +32,11 @@ enum Command {
      */
     #[clap(alias = "c", about = "Compress a file or directory")]
     Compress {
-        #[clap(
-            name = "sources",
-            help = "(Paths) Source files or directories",
-            required = true
-        )]
-        src: Vec<PathBuf>,
+        #[clap(flatten)]
+        flags: WriteOpFlags,
 
-        #[clap(name = "dest", help = "(Path) Destination file", required = true)]
-        dest: PathBuf,
+        #[clap(flatten)]
+        target: WriteOpTarget,
     },
 
     /**
@@ -50,14 +44,14 @@ enum Command {
      */
     #[clap(alias = "x", about = "Extract a file on a directory")]
     Extract {
-        #[clap(name = "source", help = "(Path) Source file.")]
-        src: PathBuf,
+        #[clap(flatten)]
+        flags: ReadOpFlags,
 
-        #[clap(name = "dest", help = "(Path) Destination file or directory")]
+        #[clap(flatten)]
+        target: ReadOpTarget,
+
+        #[clap(name = "dest", help = "(Path) Destination directory", required = true)]
         dest: PathBuf,
-
-        #[arg(short = 'p', long = "pick", help = "Pick files to extract")]
-        pick: Option<Vec<String>>,
     },
 }
 
@@ -72,51 +66,41 @@ enum Command {
     about = "Rusty de/compression tool.",
     long_about = "A simple CLI tool to compress and decompress files",
 )]
-pub struct Args {
+pub struct CLI {
     // Subcommands.
     #[command(subcommand)]
     command: Command,
-
-    // Options.
-    #[arg(short = 'l', long = "level", help = "Compression level to use")]
-    compression_level: Option<i64>,
-
-    #[arg(short = 'm', long = "method", help = "Compression method to use")]
-    method: Option<ClapCompressionMethod>,
-
-    #[arg(short = 'u', long = "unix", help = "Set unix permissions (i.e 755)")]
-    unix_permissions: Option<u32>,
 }
 
 // Commands implementation.
-fn append(src: Vec<PathBuf>, dest: PathBuf, settings: RzSettings) -> Result<(), RzError> {
+fn append(src: Vec<PathBuf>, dest: PathBuf, flags: WriteOpFlags) -> Result<(), RzError> {
+    let settings = options_from_write_ops(flags);
     rzip_core::append::append(src, dest, settings)
 }
 
-fn compress(src: Vec<PathBuf>, dest: PathBuf, settings: RzSettings) -> Result<(), RzError> {
+fn compress(src: Vec<PathBuf>, dest: PathBuf, flags: WriteOpFlags) -> Result<(), RzError> {
+    let settings = options_from_write_ops(flags);
     rzip_core::compression::compress(src, dest, settings)
 }
 
-fn extract(
-    src: PathBuf,
-    dest: PathBuf,
-    pick: Option<Vec<String>>,
-    settings: RzSettings,
-) -> Result<(), RzError> {
-    rzip_core::extraction::extract(src, dest, pick, settings)
+fn extract(src: PathBuf, dest: PathBuf, pick: Option<Vec<String>>) -> Result<(), RzError> {
+    rzip_core::extraction::extract(src, dest, pick)
 }
 
 /**
 * Main function.
 */
 fn main() {
-    let args = Args::parse();
-    let opts = options_from_args(&args);
+    let args = CLI::parse();
 
     let err = match args.command {
-        Command::Append { src, dest } => append(src, dest, opts),
-        Command::Compress { src, dest } => compress(src, dest, opts),
-        Command::Extract { src, dest, pick } => extract(src, dest, pick, opts),
+        Command::Append { flags, target } => append(target.src, target.dest, flags),
+        Command::Compress { flags, target } => compress(target.src, target.dest, flags),
+        Command::Extract {
+            flags,
+            target,
+            dest,
+        } => extract(target.src, dest, flags.pick),
     };
 
     if let Err(e) = err {

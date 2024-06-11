@@ -1,7 +1,7 @@
 use clap::ValueEnum;
 use rzip_core::{CompressionMethod, RzSettings};
 
-use crate::Args;
+use crate::ops::WriteOpFlags;
 
 /**
  * Compression methods for the CLI.
@@ -34,15 +34,15 @@ impl From<ClapCompressionMethod> for CompressionMethod {
 /**
  * Get the rzip settings from the CLI arguments.
  */
-pub fn options_from_args(args: &Args) -> RzSettings {
-    let method: Option<CompressionMethod> = if args.method.is_some() {
-        Some(args.method.clone().unwrap().into())
+pub fn options_from_write_ops(flags: WriteOpFlags) -> RzSettings {
+    let method: Option<CompressionMethod> = if flags.method.is_some() {
+        Some(flags.method.clone().unwrap().into())
     } else {
         None
     };
 
-    let compression_level = args.compression_level;
-    let unix_permissions = args.unix_permissions;
+    let compression_level = flags.compression_level;
+    let unix_permissions = flags.unix_permissions;
 
     RzSettings {
         compression_level,
