@@ -1,0 +1,22 @@
+[package]
+name = "rzip_core"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+anyhow = { workspace = true }
+thiserror = { workspace = true }
+walkdir = "2.5.0"
+
+[dependencies.zip]
+version = "2.1.3"
+features = [
+    "aes-crypto",
+    "deflate",
+    "deflate-flate2",
+    "deflate-zopfli",
+    "deflate64",
+    "lzma",
+    "bzip2",
+    "zstd",
+]

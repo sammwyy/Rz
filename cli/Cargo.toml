@@ -1,0 +1,10 @@
+[package]
+name = "rz"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+anyhow = { workspace = true }
+clap = { version = "4.5.7", features = ["derive"] }
+clap_derive = "4.5.5"
+rzip_core = { path = "../core" }
